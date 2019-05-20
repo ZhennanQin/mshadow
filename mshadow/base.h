@@ -277,6 +277,32 @@ extern "C" {
 
 #include "./half.h"
 #include "./half2.h"
+#include "./bfloat.h"
+#define MSHADOW_HALF_BF_OPERATOR(RTYPE, OP)                                               \
+  MSHADOW_XINLINE RTYPE operator OP(mshadow::half::half_t a, mshadow::bfloat::bf16_t b) { \
+    return float(a) OP float(b); /* NOLINT(*) */                                          \
+  }                                                                                       \
+  MSHADOW_XINLINE RTYPE operator OP(mshadow::bfloat::bf16_t a, mshadow::half::half_t b) { \
+    return float(a) OP float(b); /* NOLINT(*) */                                          \
+  }
+
+/*! \brief overloaded + operator between half_t and bf16_t */
+MSHADOW_HALF_BF_OPERATOR(float, +)
+/*! \brief overloaded - operator between half_t and bf16_t */
+MSHADOW_HALF_BF_OPERATOR(float, -)
+/*! \brief overloaded * operator between half_t and bf16_t */
+MSHADOW_HALF_BF_OPERATOR(float, *)
+/*! \brief overloaded / operator between half_t and bf16_t */
+MSHADOW_HALF_BF_OPERATOR(float, /)
+/*! \brief overloaded > operator between half_t and bf16_t */
+MSHADOW_HALF_BF_OPERATOR(bool, >)
+/*! \brief overloaded < operator between half_t and bf16_t */
+MSHADOW_HALF_BF_OPERATOR(bool, <)
+/*! \brief overloaded >= operator between half_t and bf16_t */
+MSHADOW_HALF_BF_OPERATOR(bool, >=)
+/*! \brief overloaded <= operator between half_t and bf16_t */
+MSHADOW_HALF_BF_OPERATOR(bool, <=)
+
 #include "./logging.h"
 /*! \brief namespace for mshadow */
 namespace mshadow {
@@ -311,6 +337,11 @@ enum TypeFlag {
   kInt32 = 4,
   kInt8  = 5,
   kInt64 = 6,
+  kInt16 = 7,
+  kUint16 = 8,
+  kUint32 = 9,
+  kUint64 = 10,
+  kBfloat16 = 11
 };
 
 template<typename DType>
@@ -362,6 +393,11 @@ template<>
 struct DataType<half::half2_t> {
   static const int kFlag = kFloat16;
   static const int kLanes = 2;
+};
+template<>
+struct DataType<bfloat::bf16_t> {
+  static const int kFlag = kBfloat16;
+  static const int kLanes = 1;
 };
 template<>
 struct DataType<uint8_t> {
@@ -624,6 +660,11 @@ template<>
 MSHADOW_XINLINE half::half_t MinValue<half::half_t>(void) {
   return MSHADOW_HALF_MIN;
 }
+/*! \brief minimum value of bf16 */
+template<>
+MSHADOW_XINLINE bfloat::bf16_t MinValue<bfloat::bf16_t>(void) {
+  return MSHADOW_BF16_MIN;
+}
 /*! \brief minimum value of uint8_t */
 template<>
 MSHADOW_XINLINE uint8_t MinValue<uint8_t>(void) {
@@ -665,6 +706,11 @@ MSHADOW_XINLINE double MaxValue<double>(void) {
 template<>
 MSHADOW_XINLINE half::half_t MaxValue<half::half_t>(void) {
   return MSHADOW_HALF_MAX;
+}
+/*! \brief maximum value of bf16 */
+template<>
+MSHADOW_XINLINE bfloat::bf16_t MaxValue<bfloat::bf16_t>(void) {
+  return MSHADOW_BF16_MAX;
 }
 /*! \brief maximum value of uint8_t */
 template<>
@@ -881,6 +927,12 @@ struct minimum {
       {__VA_ARGS__}                                 \
     }                                               \
     break;                                          \
+  case mshadow::kBfloat16:                          \
+    {                                               \
+      typedef mshadow::bfloat::bf16_t DType;        \
+      {__VA_ARGS__}                                 \
+    }                                               \
+    break;                                          \
   case mshadow::kUint8:                             \
     {                                               \
       typedef uint8_t DType;                        \
@@ -1029,6 +1081,13 @@ struct minimum {
   case mshadow::kFloat16:                           \
     {                                               \
       typedef mshadow::half::half_t DType$;         \
+      typedef float DLargeType$;                    \
+      {__VA_ARGS__}                                 \
+    }                                               \
+    break;                                          \
+  case mshadow::kBfloat16:                          \
+    {                                               \
+      typedef mshadow::bfloat::bf16_t DType$;       \
       typedef float DLargeType$;                    \
       {__VA_ARGS__}                                 \
     }                                               \
